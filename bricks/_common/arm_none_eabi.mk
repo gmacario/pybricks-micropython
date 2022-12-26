@@ -88,6 +88,7 @@ endif
 ifeq ($(PB_LIB_STM32_HAL),1)
 INC += -I$(TOP)/lib/stm32lib/STM32$(PB_MCU_SERIES)xx_HAL_Driver/Inc
 endif
+INC += -I$(TOP)/lib/uzlib
 INC += -I$(PBTOP)/lib/contiki-core
 INC += -I$(PBTOP)/lib/lego
 INC += -I$(PBTOP)/lib/lwrb/src/include
@@ -192,6 +193,7 @@ include $(PBTOP)/bricks/_common/sources.mk
 # between the top level directory and the micropython/ subdirectory.
 
 PY_EXTRA_SRC_C = $(addprefix shared/,\
+	../lib/uzlib/crc32.c \
 	libc/string0.c \
 	readline/readline.c \
 	runtime/gchelper_native.c \
