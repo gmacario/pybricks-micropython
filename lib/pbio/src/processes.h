@@ -24,4 +24,8 @@ PROCESS_NAME(pbdrv_uart_process);
 PROCESS_NAME(pbio_uartdev_process);
 #endif
 
+#if PBIO_CONFIG_BROADCAST_NUM_SIGNALS != 0
+PROCESS_NAME(pbio_broadcast_process);
+#endif
+
 #endif // _PBIO_PROCESSES_H_

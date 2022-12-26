@@ -38,6 +38,9 @@ AUTOSTART_PROCESSES(
 #if PBIO_CONFIG_UARTDEV
     &pbio_uartdev_process,
 #endif
+#if PBIO_CONFIG_BROADCAST_NUM_SIGNALS != 0
+    &pbio_broadcast_process,
+#endif
     NULL);
 
 /**
