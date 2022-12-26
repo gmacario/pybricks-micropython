@@ -7,6 +7,10 @@
 Q(Li-ion)
 #endif
 
+#if PYBRICKS_PY_BLE
+Q(pybricks.ble)
+#endif
+
 #if PYBRICKS_PY_EV3DEVICES
 Q(pybricks.ev3devices)
 #endif
