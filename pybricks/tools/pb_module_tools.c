@@ -56,11 +56,11 @@ STATIC mp_obj_t pb_module_tools_set_run_loop_active(mp_obj_t self_in) {
 MP_DEFINE_CONST_FUN_OBJ_1(pb_module_tools_set_run_loop_active_obj, pb_module_tools_set_run_loop_active);
 
 #if MICROPY_MODULE_ATTR_DELEGATION
-// pybricks.tools.task is implemented as pure Python code in the frozen _task
+// pybricks.tools.tasks is implemented as pure Python code in the frozen _tasks
 // module. This handler makes it available through the pybricks package.
 STATIC void pb_module_tools_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
-    if (attr == MP_QSTR_task) {
-        const mp_obj_t args[] = { MP_OBJ_NEW_QSTR(MP_QSTR__task) };
+    if (attr == MP_QSTR_tasks) {
+        const mp_obj_t args[] = { MP_OBJ_NEW_QSTR(MP_QSTR__tasks) };
         dest[0] = mp_builtin___import__(MP_ARRAY_SIZE(args), args);
     }
 }
