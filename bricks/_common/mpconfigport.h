@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2019-2022 The Pybricks Authors
+// Copyright (c) 2019-2023 The Pybricks Authors
 
 // Common configuration of Pybricks MicroPython ports.
 
@@ -81,7 +81,7 @@
 #define MICROPY_PY_BUILTINS_MIN_MAX             (1)
 #define MICROPY_PY___FILE__                     (0)
 #define MICROPY_PY_MICROPYTHON_MEM_INFO         (1)
-#define MICROPY_PY_GC                           (0)
+#define MICROPY_PY_GC                           (PYBRICKS_OPT_EXTRA_MOD)
 #define MICROPY_PY_ARRAY                        (0)
 #define MICROPY_PY_ATTRTUPLE                    (0)
 #define MICROPY_PY_COLLECTIONS                  (0)

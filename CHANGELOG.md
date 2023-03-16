@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Added
+- Enabled the `gc` module (except on BOOST Move hub).
+
 ### Fixed
 - Fixed allocator interfering with motor control when memory usage is high ([support#956]).
 
