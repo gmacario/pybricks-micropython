@@ -10,6 +10,7 @@
   to counterclockwise, which is more common in engineering ([support#989]).
 - Added support for setting drivebase acceleration and deceleration separately
   using a tuple, consistent with single motors ([support#881]).
+- Added `pybricks.geometry.cross(a, b)` to get a vector cross product.
 
 ### Fixed
 - Fixed allocator interfering with motor control when memory usage is high ([support#956]).
