@@ -15,6 +15,7 @@
 ### Fixed
 - Fixed allocator interfering with motor control when memory usage is high ([support#956]).
 - Fixed `Stop.NONE` not working properly for some drivebase geometries ([support#972]).
+- Fixed iterator for `Matrix` objects giving bad values.
 
 ### Changed
 - Methods like `control.limits()` now check the user input and raise a
