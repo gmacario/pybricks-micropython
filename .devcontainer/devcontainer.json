@@ -1,6 +1,7 @@
 {
   "dockerFile": "devcontainer.Dockerfile",
   "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker": "latest"
   },
   "customizations": {
     "vscode": {
