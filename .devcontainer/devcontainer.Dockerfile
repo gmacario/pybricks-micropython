@@ -7,6 +7,8 @@ RUN apt-get update \
         build-essential \
         curl \
         git \
+        pipx \
+        python-is-python3 \
         python3 \
         software-properties-common
 
