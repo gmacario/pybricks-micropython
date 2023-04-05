@@ -12,23 +12,6 @@ RUN apt-get update \
         python3 \
         software-properties-common
 
-    # bc \
-    # sudo \
-    # build-essential \
-    # ca-certificates \
-    # clang \
-    # curl \
-    # gcc \
-    # git \
-    # python3 \
-    # python3-dev \
-    # python3-distutils \
-    # python3-pip \
-    # python3-setuptools \
-    # srecord \
-    # udev \
-    # xz-utils \
-
 # The correct version of uncrustify is available via the Pybricks PPA
 RUN apt-add-repository ppa:pybricks/ppa \
     && apt-get update \
