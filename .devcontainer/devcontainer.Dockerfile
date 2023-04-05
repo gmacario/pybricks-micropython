@@ -21,6 +21,9 @@ RUN apt-add-repository ppa:pybricks/ppa \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Poetry
+RUN pipx install poetry
+
 # Install Arm GNU Toolchain
 # Reference: https://lindevs.com/install-arm-gnu-toolchain-on-ubuntu
 RUN ARM_TOOLCHAIN_VERSION=$(curl -s https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads | grep -Po '<h4>Version \K.+(?=</h4>)') \
