@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <pbdrv/clock.h>
 #include <pbdrv/imu.h>
 
 #include <pbio/angle.h>
@@ -19,15 +20,11 @@
 static pbdrv_imu_dev_t *imu_dev;
 static pbdrv_imu_config_t *imu_config;
 
-// This counter is a measure for calibration accuracy, roughly equivalent
-// to the accumulative number of seconds it was stationary.
-static uint32_t stationary_counter = 0;
-
 // Cached sensor values that can be read at any time without polling again.
-static pbio_geometry_xyz_t angular_velocity; // deg/s, already adjusted for bias.
-static pbio_geometry_xyz_t acceleration;
+static pbio_geometry_xyz_t angular_velocity; // deg/s, in hub frame, already adjusted for bias.
+static pbio_geometry_xyz_t acceleration; // mm/s^2, in hub frame
 static pbio_geometry_xyz_t gyro_bias;
-static pbio_geometry_xyz_t heading;
+static pbio_geometry_xyz_t single_axis_rotation; // deg, in hub frame
 
 // Called by driver to process one frame of unfiltered gyro and accelerometer data.
 static void pbio_imu_handle_frame_data_func(int16_t *data) {
@@ -41,13 +38,34 @@ static void pbio_imu_handle_frame_data_func(int16_t *data) {
         // the hub mounted at an arbitrary orientation. Such a 1D heading
         // is numerically more accurate, which is useful in drive base
         // applications so long as the vehicle drives on a flat surface.
-        heading.values[i] += angular_velocity.values[i] * imu_config->sample_time;
+        single_axis_rotation.values[i] += angular_velocity.values[i] * imu_config->sample_time;
     }
+}
+
+// This counter is a measure for calibration accuracy, roughly equivalent
+// to the accumulative number of seconds it has been stationary in total.
+static uint32_t stationary_counter = 0;
+static uint32_t stationary_time_last;
+
+/*
+ * Tests if the imu is ready for use in a user program.
+ *
+ * @return    True if it has been stationary at least once in the last 10 minutes.
+*/
+bool pbio_imu_is_ready(void) {
+    return stationary_counter > 0 && pbdrv_clock_get_ms() - stationary_time_last < 10 * 60 * 1000;
 }
 
 // Called by driver to process unfiltered gyro and accelerometer data recorded while stationary.
 static void pbio_imu_handle_stationary_data_func(const int32_t *gyro_data_sum, const int32_t *accel_data_sum, uint32_t num_samples) {
 
+    // If the IMU calibration hasn't been updated in a long time, reset the
+    // stationary counter so that the calibration values get a large weight.
+    if (!pbio_imu_is_ready()) {
+        stationary_counter = 0;
+    }
+
+    stationary_time_last = pbdrv_clock_get_ms();
     stationary_counter++;
 
     // The relative weight of the new data in order to build a long term
@@ -124,9 +142,19 @@ bool pbio_imu_is_stationary(void) {
  * @param [in]  acceleration     Acceleration threshold in mm/s^2
  */
 void pbio_imu_set_stationary_thresholds(float angular_velocity, float acceleration) {
-    int16_t gyro_threshold = pbio_int_math_bind(angular_velocity / imu_config->gyro_scale, 1, INT16_MAX);
-    int16_t accl_threshold = pbio_int_math_bind(acceleration / imu_config->accel_scale, 1, INT16_MAX);
-    pbdrv_imu_set_stationary_thresholds(imu_dev, gyro_threshold, accl_threshold);
+    imu_config->gyro_stationary_threshold = pbio_int_math_bind(angular_velocity / imu_config->gyro_scale, 1, INT16_MAX);
+    imu_config->accel_stationary_threshold = pbio_int_math_bind(acceleration / imu_config->accel_scale, 1, INT16_MAX);
+}
+
+/**
+ * Gets the thresholds that define when the hub is stationary.
+ *
+ * @param [out]  angular_velocity Angular velocity threshold in deg/s.
+ * @param [out]  acceleration     Acceleration threshold in mm/s^2
+ */
+void pbio_imu_get_stationary_thresholds(float *angular_velocity, float *acceleration) {
+    *angular_velocity = imu_config->gyro_stationary_threshold * imu_config->gyro_scale;
+    *acceleration = imu_config->accel_stationary_threshold * imu_config->accel_scale;
 }
 
 /**
@@ -145,6 +173,25 @@ void pbio_imu_get_angular_velocity(pbio_geometry_xyz_t *values) {
  */
 void pbio_imu_get_acceleration(pbio_geometry_xyz_t *values) {
     pbio_geometry_vector_map(&pbio_orientation_base_orientation, &acceleration, values);
+}
+
+/**
+ * Gets the rotation along a particular axis of the robot frame.
+ *
+ * The resulting value makes sense only for one-dimensional rotations.
+ *
+ * @param [in]  axis        The axis to project the rotation onto.
+ * @param [out] angle       The angle of rotation in degrees.
+ * @return                  ::PBIO_SUCCESS on success, ::PBIO_ERROR_INVALID_ARG if axis has zero length.
+ */
+pbio_error_t pbio_imu_get_single_axis_rotation(pbio_geometry_xyz_t *axis, float *angle) {
+
+    // Transform the single axis rotations to the robot frame.
+    pbio_geometry_xyz_t rotation;
+    pbio_geometry_vector_map(&pbio_orientation_base_orientation, &single_axis_rotation, &rotation);
+
+    // Get the requested scalar rotation along the given axis.
+    return pbio_geometry_vector_project(axis, &rotation, angle);
 }
 
 /**
@@ -171,7 +218,7 @@ float pbio_imu_get_heading(void) {
 
     pbio_geometry_xyz_t heading_mapped;
 
-    pbio_geometry_vector_map(&pbio_orientation_base_orientation, &heading, &heading_mapped);
+    pbio_geometry_vector_map(&pbio_orientation_base_orientation, &single_axis_rotation, &heading_mapped);
 
     return heading_mapped.z - heading_offset;
 }

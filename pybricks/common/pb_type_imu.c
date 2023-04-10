@@ -66,7 +66,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(common_IMU_tilt_obj, common_IMU_tilt);
 
 STATIC void pb_type_imu_extract_axis(mp_obj_t obj_in, pbio_geometry_xyz_t *vector) {
     if (!mp_obj_is_type(obj_in, &pb_type_Matrix)) {
-        mp_raise_TypeError(MP_ERROR_TEXT("Axis must be Matrix or None."));
+        mp_raise_TypeError(MP_ERROR_TEXT("Axis must be Matrix."));
     }
     pb_type_Matrix_obj_t *vector_obj = MP_OBJ_TO_PTR(obj_in);
     if (vector_obj->m * vector_obj->n != 3) {
@@ -127,24 +127,69 @@ STATIC mp_obj_t common_IMU_angular_velocity(size_t n_args, const mp_obj_t *pos_a
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(common_IMU_angular_velocity_obj, 1, common_IMU_angular_velocity);
 
+// pybricks._common.IMU.rotation
+STATIC mp_obj_t common_IMU_rotation(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    PB_PARSE_ARGS_METHOD(n_args, pos_args, kw_args,
+        common_IMU_obj_t, self,
+        PB_ARG_DEFAULT_NONE(axis));
+
+    (void)self;
+
+    // Otherwise convert user axis to pbio object and project vector onto it.
+    pbio_geometry_xyz_t axis;
+    pb_type_imu_extract_axis(axis_in, &axis);
+
+    float rotation_angle;
+    pb_assert(pbio_imu_get_single_axis_rotation(&axis, &rotation_angle));
+    return mp_obj_new_float_from_f(rotation_angle);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(common_IMU_rotation_obj, 1, common_IMU_rotation);
+
+// pybricks._common.IMU.ready
+STATIC mp_obj_t common_IMU_ready(mp_obj_t self_in) {
+    return mp_obj_new_bool(pbio_imu_is_ready());
+}
+MP_DEFINE_CONST_FUN_OBJ_1(common_IMU_ready_obj, common_IMU_ready);
+
 // pybricks._common.IMU.stationary
 STATIC mp_obj_t common_IMU_stationary(mp_obj_t self_in) {
     return mp_obj_new_bool(pbio_imu_is_stationary());
 }
 MP_DEFINE_CONST_FUN_OBJ_1(common_IMU_stationary_obj, common_IMU_stationary);
 
-// pybricks._common.IMU.set_stationary_thresholds
-STATIC mp_obj_t common_IMU_set_stationary_thresholds(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+// pybricks._common.IMU.settings
+STATIC mp_obj_t common_IMU_settings(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     PB_PARSE_ARGS_METHOD(n_args, pos_args, kw_args,
         common_IMU_obj_t, self,
-        PB_ARG_REQUIRED(angular_velocity),
-        PB_ARG_REQUIRED(acceleration));
+        PB_ARG_DEFAULT_NONE(angular_velocity_threshold),
+        PB_ARG_DEFAULT_NONE(acceleration_threshold));
 
     (void)self;
-    pbio_imu_set_stationary_thresholds(mp_obj_get_float(angular_velocity_in), mp_obj_get_float(acceleration_in));
+
+    float angular_velocity;
+    float acceleration;
+    pbio_imu_get_stationary_thresholds(&angular_velocity, &acceleration);
+
+    // Return current values if no arguments are given.
+    if (angular_velocity_threshold_in == mp_const_none && acceleration_threshold_in == mp_const_none) {
+        mp_obj_t ret[] = {
+            mp_obj_new_float_from_f(angular_velocity),
+            mp_obj_new_float_from_f(acceleration),
+        };
+        return mp_obj_new_tuple(MP_ARRAY_SIZE(ret), ret);
+    }
+
+    // Otherwise set new values.
+    if (angular_velocity_threshold_in != mp_const_none) {
+        angular_velocity = mp_obj_get_float(angular_velocity_threshold_in);
+    }
+    if (acceleration_threshold_in != mp_const_none) {
+        acceleration = mp_obj_get_float(acceleration_threshold_in);
+    }
+    pbio_imu_set_stationary_thresholds(angular_velocity, acceleration);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(common_IMU_set_stationary_thresholds_obj, 1, common_IMU_set_stationary_thresholds);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(common_IMU_settings_obj, 1, common_IMU_settings);
 
 // pybricks._common.IMU.heading
 STATIC mp_obj_t common_IMU_heading(mp_obj_t self_in) {
@@ -171,8 +216,10 @@ STATIC const mp_rom_map_elem_t common_IMU_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_acceleration),     MP_ROM_PTR(&common_IMU_acceleration_obj)    },
     { MP_ROM_QSTR(MP_QSTR_angular_velocity), MP_ROM_PTR(&common_IMU_angular_velocity_obj)},
     { MP_ROM_QSTR(MP_QSTR_heading),          MP_ROM_PTR(&common_IMU_heading_obj)         },
+    { MP_ROM_QSTR(MP_QSTR_ready),            MP_ROM_PTR(&common_IMU_ready_obj)           },
     { MP_ROM_QSTR(MP_QSTR_reset_heading),    MP_ROM_PTR(&common_IMU_reset_heading_obj)   },
-    { MP_ROM_QSTR(MP_QSTR_set_stationary_thresholds), MP_ROM_PTR(&common_IMU_set_stationary_thresholds_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rotation),         MP_ROM_PTR(&common_IMU_rotation_obj)        },
+    { MP_ROM_QSTR(MP_QSTR_settings),         MP_ROM_PTR(&common_IMU_settings_obj)        },
     { MP_ROM_QSTR(MP_QSTR_stationary),       MP_ROM_PTR(&common_IMU_stationary_obj)      },
     { MP_ROM_QSTR(MP_QSTR_tilt),             MP_ROM_PTR(&common_IMU_tilt_obj)            },
     { MP_ROM_QSTR(MP_QSTR_up),               MP_ROM_PTR(&common_IMU_up_obj)              },

@@ -26,11 +26,17 @@ pbio_error_t pbio_imu_set_base_orientation(pbio_geometry_xyz_t *x_axis, pbio_geo
 
 bool pbio_imu_is_stationary(void);
 
+bool pbio_imu_is_ready(void);
+
+void pbio_imu_get_stationary_thresholds(float *angular_velocity, float *acceleration);
+
 void pbio_imu_set_stationary_thresholds(float angular_velocity, float acceleration);
 
 void pbio_imu_get_angular_velocity(pbio_geometry_xyz_t *values);
 
 void pbio_imu_get_acceleration(pbio_geometry_xyz_t *values);
+
+pbio_error_t pbio_imu_get_single_axis_rotation(pbio_geometry_xyz_t *axis, float *angle);
 
 pbio_geometry_side_t pbio_imu_get_up_side(void);
 

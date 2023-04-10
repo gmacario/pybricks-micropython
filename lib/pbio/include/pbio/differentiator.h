@@ -22,19 +22,29 @@
 
 /**
  * Differentiator of position signal.
+ *
+ * This works by keeping a ring buffer of position increments between each
+ * loop iteration. The speed is the average position difference across a given
+ * time window.
  */
 typedef struct _pbio_differentiator_t {
     /**
-     * Ring buffer of position samples.
+     * Previous angle sample.
      */
-    pbio_angle_t history[PBIO_CONFIG_DIFFERENTIATOR_WINDOW_MS / PBIO_CONFIG_CONTROL_LOOP_TIME_MS];
+    pbio_angle_t prev_angle;
     /**
-     * Ring buffer index.
+     * Ring buffer of increments.
+     */
+    int16_t history[PBIO_CONFIG_DIFFERENTIATOR_BUFFER_SIZE];
+    /**
+     * Ring buffer index of the newest sampe.
      */
     uint8_t index;
 } pbio_differentiator_t;
 
-int32_t pbio_differentiator_get_speed(pbio_differentiator_t *dif, const pbio_angle_t *angle);
+int32_t pbio_differentiator_update_and_get_speed(pbio_differentiator_t *dif, const pbio_angle_t *angle);
+
+pbio_error_t pbio_differentiator_get_speed(pbio_differentiator_t *dif, uint32_t window, int32_t *speed);
 
 void pbio_differentiator_reset(pbio_differentiator_t *dif, const pbio_angle_t *angle);
 
